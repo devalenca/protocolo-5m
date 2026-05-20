@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+build
+coverage
+pnpm-lock.yaml
+legacy
+public
+*.min.js
+*.min.css
