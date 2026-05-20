@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 type ModalProps = {
@@ -12,22 +13,33 @@ type ModalProps = {
 };
 
 export function Modal({ open, onClose, title, children, className }: ModalProps) {
+  // Garante acesso seguro ao document só após mount (SSR safe).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  // Portal pro body — escapa de qualquer stacking context (backdrop-blur,
+  // transform, filter, etc.) na árvore acima. Sem isso o modal fica preso
+  // dentro da TopBar fixa em mobile.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
       role="dialog"
@@ -56,6 +68,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
         )}
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
