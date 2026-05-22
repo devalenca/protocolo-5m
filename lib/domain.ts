@@ -228,3 +228,30 @@ export function daysSinceStart(d: AppData): number {
   const today = parseDate(todayStr());
   return Math.max(1, Math.round((today.getTime() - start.getTime()) / 86_400_000) + 1);
 }
+
+/* =================================================================
+   1RM estimado (fórmula Epley)
+   ----------------------------------------------------------------
+   1RM ≈ peso × (1 + reps / 30)
+   Identidade pra 1 rep (não infla); 0 quando inputs inválidos.
+   ================================================================= */
+export function epley1RM(weight: number, reps: number): number {
+  if (!Number.isFinite(weight) || !Number.isFinite(reps)) return 0;
+  if (weight <= 0 || reps <= 0) return 0;
+  if (reps === 1) return Math.round(weight * 10) / 10;
+  return Math.round(weight * (1 + reps / 30) * 10) / 10;
+}
+
+/** Melhor e1RM já atingido neste exercício (em qualquer workout). */
+export function getBestE1RM(d: AppData, exName: string): number {
+  let best = 0;
+  for (const w of d.workouts) {
+    const ex = w.exercises.find((e) => e.name === exName);
+    if (!ex) continue;
+    for (const s of ex.sets) {
+      const e1 = epley1RM(Number(s.weight), Number(s.reps));
+      if (e1 > best) best = e1;
+    }
+  }
+  return best;
+}

@@ -17,6 +17,8 @@ import {
 const setValidator = v.object({
   weight: v.string(),
   reps: v.string(),
+  rpe: v.optional(v.string()),
+  notes: v.optional(v.string()),
 });
 
 const exerciseValidator = v.object({

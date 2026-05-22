@@ -49,6 +49,10 @@ export type WorkoutTemplate = {
 export type ExerciseSet = {
   weight: string;
   reps: string;
+  /** RPE (0-10) — esforço percebido. Opcional. */
+  rpe?: string;
+  /** Notas livres por série (ex: "joelho esquerdo doendo"). */
+  notes?: string;
 };
 
 export type LoggedExercise = {
@@ -87,10 +91,54 @@ export type Achievement = {
   test: (d: AppData) => boolean;
 };
 
+export type FoodItem = {
+  _id: string;
+  name: string;
+  brand?: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber?: number;
+  defaultPortionGrams?: number;
+  defaultPortionLabel?: string;
+  /** True quando é alimento custom do user (profileId set) */
+  isCustom: boolean;
+};
+
+export type MealEntry = {
+  _id: string;
+  date: string;
+  mealType: string;
+  foodId?: string;
+  foodName: string;
+  portionGrams: number;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+export type BodyMetric = {
+  /** YYYY-MM-DD */
+  date: string;
+  /** kg */
+  weight: number;
+  bodyFatPct?: number;
+  /** cm */
+  waist?: number;
+  chest?: number;
+  arm?: number;
+  hip?: number;
+  thigh?: number;
+  notes?: string;
+};
+
 export type AppData = {
   checklist: ChecklistState;
   workouts: LoggedWorkout[];
   achievements: AchievementId[];
+  bodyMetrics: BodyMetric[];
   startDate: string;
   /** schema version for migrations */
   v: number;

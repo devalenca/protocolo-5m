@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, ChevronRight, Trophy } from "lucide-react";
+import { ExerciseHistoryModal } from "@/components/treino/ExerciseHistoryModal";
 import { ExerciseLogger } from "@/components/treino/ExerciseLogger";
 import { RestTimerFloat } from "@/components/treino/RestTimerFloat";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +13,7 @@ import { WORKOUTS, WORKOUT_ORDER } from "@/lib/constants";
 import { formatDateBR } from "@/lib/dates";
 import {
   getAllPRs,
+  getBestE1RM,
   getPreviousBest,
   isPR,
   suggestNextWorkout,
@@ -26,6 +28,7 @@ type View = { mode: "picker" } | { mode: "active"; workoutId: WorkoutId };
 export default function TreinoPage() {
   const { data, finishWorkout } = useDataStore();
   const [view, setView] = useState<View>({ mode: "picker" });
+  const [historyExercise, setHistoryExercise] = useState<string | null>(null);
   const toast = useToast();
   const timer = useRestTimer();
 
@@ -38,16 +41,26 @@ export default function TreinoPage() {
 
   if (view.mode === "active") {
     return (
-      <ActiveWorkoutView
-        workoutId={view.workoutId}
-        onExit={() => setView({ mode: "picker" })}
-        onFinish={(exercises, startedAt) => {
-          finishWorkout(view.workoutId, exercises, startedAt);
-          toast.push("Treino finalizado", "success");
-          setView({ mode: "picker" });
-        }}
-        timer={timer}
-      />
+      <>
+        <ActiveWorkoutView
+          workoutId={view.workoutId}
+          onExit={() => setView({ mode: "picker" })}
+          onFinish={(exercises, startedAt) => {
+            finishWorkout(view.workoutId, exercises, startedAt);
+            toast.push("Treino finalizado", "success");
+            setView({ mode: "picker" });
+          }}
+          onShowHistory={(name) => setHistoryExercise(name)}
+          timer={timer}
+        />
+        {historyExercise && (
+          <ExerciseHistoryModal
+            open={historyExercise !== null}
+            onClose={() => setHistoryExercise(null)}
+            exerciseName={historyExercise}
+          />
+        )}
+      </>
     );
   }
 
@@ -130,20 +143,23 @@ export default function TreinoPage() {
               )
               .slice(0, 8)
               .map(([name, pr]) => (
-                <li
-                  key={name}
-                  className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate font-serif text-sm">{name}</div>
-                    <div className="text-text-mute text-[10px]">
-                      {formatDateBR(pr.date)}
+                <li key={name} className="first:pt-0 last:pb-0">
+                  <button
+                    type="button"
+                    onClick={() => setHistoryExercise(name)}
+                    className="hover:text-text flex w-full items-center justify-between gap-2 py-2.5 text-left transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-serif text-sm">{name}</div>
+                      <div className="text-text-mute text-[10px]">
+                        {formatDateBR(pr.date)} · toque pra ver histórico
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-brand font-serif text-sm font-medium tabular">
-                    <Trophy className="mr-1 inline h-3.5 w-3.5" />
-                    {pr.weight}kg × {pr.reps}
-                  </div>
+                    <div className="text-brand font-serif text-sm font-medium tabular">
+                      <Trophy className="mr-1 inline h-3.5 w-3.5" />
+                      {pr.weight}kg × {pr.reps}
+                    </div>
+                  </button>
                 </li>
               ))}
           </ul>
@@ -186,6 +202,14 @@ export default function TreinoPage() {
         running={timer.running}
         onCancel={timer.cancel}
       />
+
+      {historyExercise && (
+        <ExerciseHistoryModal
+          open={historyExercise !== null}
+          onClose={() => setHistoryExercise(null)}
+          exerciseName={historyExercise}
+        />
+      )}
     </>
   );
 }
@@ -198,11 +222,13 @@ function ActiveWorkoutView({
   workoutId,
   onExit,
   onFinish,
+  onShowHistory,
   timer,
 }: {
   workoutId: WorkoutId;
   onExit: () => void;
   onFinish: (exercises: LoggedExercise[], startedAt: number) => void;
+  onShowHistory: (exerciseName: string) => void;
   timer: ReturnType<typeof useRestTimer>;
 }) {
   const { data } = useDataStore();
@@ -229,6 +255,8 @@ function ActiveWorkoutView({
   const previousBests = template.exercises.map((ex) =>
     getPreviousBest(data, workoutId, ex.name),
   );
+
+  const bestE1RMs = template.exercises.map((ex) => getBestE1RM(data, ex.name));
 
   return (
     <>
@@ -258,9 +286,11 @@ function ActiveWorkoutView({
             template={ex}
             state={exercises[idx]}
             previousBest={previousBests[idx]}
+            bestE1RM={bestE1RMs[idx]}
             isPRSet={(weight, reps) => isPRForExercise(ex.name, weight, reps)}
             onChange={(next) => updateExercise(idx, next)}
             onSetCompleted={(s) => timer.start(s)}
+            onShowHistory={() => onShowHistory(ex.name)}
           />
         ))}
       </div>

@@ -50,6 +50,10 @@ export default defineSchema({
           v.object({
             weight: v.string(),
             reps: v.string(),
+            /** RPE (0-10) — esforço percebido. Opcional. */
+            rpe: v.optional(v.string()),
+            /** Notas livres por série (ex: "joelho esquerdo"). */
+            notes: v.optional(v.string()),
           }),
         ),
       }),
@@ -66,4 +70,79 @@ export default defineSchema({
   })
     .index("by_profile", ["profileId"])
     .index("by_profile_achievement", ["profileId", "achievementId"]),
+
+  bodyMetrics: defineTable({
+    profileId: v.id("profiles"),
+    /** YYYY-MM-DD da medição */
+    date: v.string(),
+    /** Peso em kg. Sempre presente — é o ponto da timeline. */
+    weight: v.number(),
+    /** % gordura corporal (opcional). */
+    bodyFatPct: v.optional(v.number()),
+    /** Cintura em cm. */
+    waist: v.optional(v.number()),
+    /** Peito em cm. */
+    chest: v.optional(v.number()),
+    /** Braço (maior dos dois) em cm. */
+    arm: v.optional(v.number()),
+    /** Quadril em cm. */
+    hip: v.optional(v.number()),
+    /** Coxa (maior das duas) em cm. */
+    thigh: v.optional(v.number()),
+    /** Observação livre. */
+    notes: v.optional(v.string()),
+  })
+    .index("by_profile", ["profileId"])
+    .index("by_profile_date", ["profileId", "date"]),
+
+  /* =================================================================
+     Nutrição
+     ----------------------------------------------------------------
+     `foods` é a base de alimentos. profileId undefined = global (seed);
+     setado = alimento custom do usuário.
+     `mealEntries` é uma linha por item de refeição (denormaliza nome e
+     macros pra performance e pra resistir a edits do food original).
+     ================================================================= */
+
+  foods: defineTable({
+    profileId: v.optional(v.id("profiles")),
+    name: v.string(),
+    brand: v.optional(v.string()),
+    /** chave lowercased + sem acentos pra busca */
+    searchKey: v.string(),
+    /** Todos os macros por 100g */
+    kcal: v.number(),
+    protein: v.number(),
+    carbs: v.number(),
+    fat: v.number(),
+    fiber: v.optional(v.number()),
+    /** Sugestão de porção padrão (ex.: "1 ovo" = 50g) */
+    defaultPortionGrams: v.optional(v.number()),
+    defaultPortionLabel: v.optional(v.string()),
+  })
+    .index("by_profile", ["profileId"])
+    .searchIndex("search_name", {
+      searchField: "searchKey",
+      filterFields: ["profileId"],
+    }),
+
+  mealEntries: defineTable({
+    profileId: v.id("profiles"),
+    /** YYYY-MM-DD */
+    date: v.string(),
+    /** cafe | lanche_manha | almoco | pre_treino | jantar | pre_sono */
+    mealType: v.string(),
+    /** Link opcional pro food (null em quick-entry sem buscar) */
+    foodId: v.optional(v.id("foods")),
+    /** Nome denormalizado pra display + resilience */
+    foodName: v.string(),
+    portionGrams: v.number(),
+    /** Macros já calculados pela porção (snapshot). */
+    kcal: v.number(),
+    protein: v.number(),
+    carbs: v.number(),
+    fat: v.number(),
+  })
+    .index("by_profile_date", ["profileId", "date"])
+    .index("by_profile", ["profileId"]),
 });
