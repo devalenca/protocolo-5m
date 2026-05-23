@@ -4,6 +4,7 @@
    Valores vêm da Seção 01 (metas diárias) e Seção 02 (horários).
    ================================================================= */
 
+/** IDs sugeridos pelo protocolo 5M (defaults). Slots custom usam string livre. */
 export type MealType =
   | "cafe"
   | "lanche_manha"
@@ -13,7 +14,8 @@ export type MealType =
   | "pre_sono";
 
 export type MealSlot = {
-  id: MealType;
+  /** ID livre — usa MealType pros defaults ou string custom. */
+  id: string;
   label: string;
   /** Horário sugerido HH:MM (vindo do protocolo) */
   time: string;

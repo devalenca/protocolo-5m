@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { useToast } from "@/components/ui/Toast";
-import { WORKOUTS, WORKOUT_ORDER } from "@/lib/constants";
 import { formatDateBR } from "@/lib/dates";
 import {
   getAllPRs,
@@ -21,29 +20,47 @@ import {
 import type { LoggedExercise, WorkoutId } from "@/lib/types";
 import { useRestTimer } from "@/lib/useRestTimer";
 import { useDataStore } from "@/lib/useDataStore";
+import { useWorkoutPlan } from "@/lib/usePlan";
 import { cn } from "@/lib/utils";
 
 type View = { mode: "picker" } | { mode: "active"; workoutId: WorkoutId };
 
 export default function TreinoPage() {
   const { data, finishWorkout } = useDataStore();
+  const plan = useWorkoutPlan();
   const [view, setView] = useState<View>({ mode: "picker" });
   const [historyExercise, setHistoryExercise] = useState<string | null>(null);
   const toast = useToast();
   const timer = useRestTimer();
 
   const suggestion = useMemo(
-    () => suggestNextWorkout(data, WORKOUTS, WORKOUT_ORDER),
-    [data],
+    () => suggestNextWorkout(data, plan.byId, plan.order),
+    [data, plan.byId, plan.order],
   );
   const prs = useMemo(() => getAllPRs(data), [data]);
   const recent = useMemo(() => data.workouts.slice().reverse().slice(0, 5), [data]);
 
   if (view.mode === "active") {
+    const template = plan.byId[view.workoutId];
+    if (!template) {
+      // Template removido entre clique e carga — picker é o fallback
+      return (
+        <div className="text-text-dim p-8 text-center text-sm">
+          Esse template não está mais disponível.{" "}
+          <button
+            type="button"
+            onClick={() => setView({ mode: "picker" })}
+            className="text-brand underline"
+          >
+            Voltar
+          </button>
+        </div>
+      );
+    }
     return (
       <>
         <ActiveWorkoutView
-          workoutId={view.workoutId}
+          template={template}
           onExit={() => setView({ mode: "picker" })}
           onFinish={(exercises, startedAt) => {
             finishWorkout(view.workoutId, exercises, startedAt);
@@ -97,8 +114,7 @@ export default function TreinoPage() {
       {/* Todos os splits */}
       <Panel title="Todos os splits" className="mb-4">
         <ul className="-m-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
-          {WORKOUT_ORDER.map((wid) => {
-            const w = WORKOUTS[wid];
+          {plan.templates.map((w) => {
             return (
               <li key={w.id}>
                 <button
@@ -173,7 +189,7 @@ export default function TreinoPage() {
         ) : (
           <ul className="divide-line-faint divide-y">
             {recent.map((w) => {
-              const template = WORKOUTS[w.workoutId];
+              const template = plan.byId[w.workoutId];
               const filledSets = w.exercises.flatMap((e) =>
                 e.sets.filter((s) => s.weight && s.reps),
               );
@@ -183,7 +199,7 @@ export default function TreinoPage() {
                   className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0"
                 >
                   <div>
-                    <div className="font-serif text-sm">{template.name}</div>
+                    <div className="font-serif text-sm">{template?.name ?? w.workoutId}</div>
                     <div className="text-text-mute text-[10px]">
                       {formatDateBR(w.date)} · {filledSets.length} séries com carga
                     </div>
@@ -219,20 +235,20 @@ export default function TreinoPage() {
    ============================================================ */
 
 function ActiveWorkoutView({
-  workoutId,
+  template,
   onExit,
   onFinish,
   onShowHistory,
   timer,
 }: {
-  workoutId: WorkoutId;
+  template: import("@/lib/types").WorkoutTemplate;
   onExit: () => void;
   onFinish: (exercises: LoggedExercise[], startedAt: number) => void;
   onShowHistory: (exerciseName: string) => void;
   timer: ReturnType<typeof useRestTimer>;
 }) {
   const { data } = useDataStore();
-  const template = WORKOUTS[workoutId];
+  const workoutId = template.id;
   const [startedAt] = useState(() => Date.now());
   const [exercises, setExercises] = useState<LoggedExercise[]>(() =>
     template.exercises.map((ex) => ({

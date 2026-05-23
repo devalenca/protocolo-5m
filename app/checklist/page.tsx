@@ -6,19 +6,30 @@ import { ChecklistItem } from "@/components/checklist/ChecklistItem";
 import { Panel } from "@/components/ui/Panel";
 import { RingProgress } from "@/components/ui/RingProgress";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
-import { CHECKLIST_ITEMS } from "@/lib/constants";
 import { addDays, dayOfWeek, formatDateBR, todayStr } from "@/lib/dates";
-import { getDayProgress, TOTAL_CHECKLIST_ITEMS } from "@/lib/domain";
 import { useDataStore } from "@/lib/useDataStore";
+import { useHabitPlan } from "@/lib/usePlan";
 import { cn } from "@/lib/utils";
 
 export default function ChecklistPage() {
   const { data, hydrated, toggleChecklistItem } = useDataStore();
+  const { items } = useHabitPlan();
   const [date, setDate] = useState<string>(() => todayStr());
 
-  const progress = useMemo(() => getDayProgress(data, date), [data, date]);
+  const day = useMemo(() => data.checklist[date] ?? {}, [data.checklist, date]);
+
+  const progress = useMemo(() => {
+    const total = items.length;
+    if (total === 0) return { count: 0, total: 0, pct: 0 };
+    const count = items.filter((it) => day[it.id]).length;
+    return {
+      count,
+      total,
+      pct: Math.round((count / total) * 100),
+    };
+  }, [items, day]);
+
   const isToday = date === todayStr();
-  const day = data.checklist[date] ?? {};
 
   return (
     <>
@@ -83,7 +94,7 @@ export default function ChecklistPage() {
               {progress.pct === 0 && "Marque o primeiro item"}
               {progress.pct > 0 &&
                 progress.pct < 100 &&
-                `${TOTAL_CHECKLIST_ITEMS - progress.count} pendente(s)`}
+                `${progress.total - progress.count} pendente(s)`}
               {progress.pct === 100 && "Todos os hábitos completos"}
             </div>
           </div>
@@ -92,7 +103,7 @@ export default function ChecklistPage() {
 
       {/* Items */}
       <div className={cn("space-y-2", !hydrated && "opacity-60")}>
-        {CHECKLIST_ITEMS.map((item) => (
+        {items.map((item) => (
           <ChecklistItem
             key={item.id}
             item={item}
