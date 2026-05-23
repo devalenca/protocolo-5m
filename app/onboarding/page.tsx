@@ -78,6 +78,7 @@ export default function OnboardingPage() {
   );
   const upsertSettings = useMutation(api.profileSettings.upsert);
   const upsertMealPlan = useMutation(api.mealPlan.upsert);
+  const applyPlan = useMutation(api.planApply.applyGeneratedPlan);
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(EMPTY_FORM);
@@ -215,6 +216,22 @@ export default function OnboardingPage() {
         deviceId,
         goals: computed,
         slots: DEFAULT_SLOTS_FOR_NEW_USER,
+      });
+
+      // Gera treino e suplementação personalizados a partir das respostas.
+      // - Splits seguem padrão internacional por nº de dias (1=FullBody → 6=PPL×2)
+      // - Exercícios filtrados por tipos preferidos + impacto se joelho ruim
+      // - Sets/reps/rest ajustados pelo objetivo (cut/recomp/maintain/bulk)
+      // - Suplementação por objetivo (essencial/recomendado/opcional)
+      await applyPlan({
+        deviceId,
+        trainingDaysPerWeek: form.trainingDaysPerWeek
+          ? parseFloat(form.trainingDaysPerWeek)
+          : 4,
+        exerciseTypes: form.exerciseTypes,
+        hasKneeIssues: form.hasKneeIssues ?? false,
+        goal: form.goal,
+        biotipo: form.biotipo || undefined,
       });
 
       router.push("/");

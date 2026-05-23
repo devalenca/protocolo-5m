@@ -119,6 +119,10 @@ export default defineSchema({
     /** Sugestão de porção padrão (ex.: "1 ovo" = 50g) */
     defaultPortionGrams: v.optional(v.number()),
     defaultPortionLabel: v.optional(v.string()),
+    /** facil = pronto / prep min · medio = cozinha simples · dificil = prep longo */
+    difficulty: v.optional(
+      v.union(v.literal("facil"), v.literal("medio"), v.literal("dificil")),
+    ),
   })
     .index("by_profile", ["profileId"])
     .searchIndex("search_name", {
@@ -253,4 +257,78 @@ export default defineSchema({
   })
     .index("by_profile", ["profileId"])
     .index("by_profile_item", ["profileId", "itemId"]),
+
+  /* =================================================================
+     Biblioteca de exercícios — global, igual `foods`
+     ----------------------------------------------------------------
+     Classificação por grupo muscular, equipamento, tipo (padrões
+     internacionais de musculação), dificuldade, impacto (joelho).
+     Usado pelo plan generator pra montar templates de treino.
+     ================================================================= */
+  exercises: defineTable({
+    profileId: v.optional(v.id("profiles")),
+    name: v.string(),
+    searchKey: v.string(),
+    /** chest, back, shoulders, biceps, triceps, quads, hamstrings, glutes, calves, core, full_body */
+    primaryMuscle: v.string(),
+    secondaryMuscles: v.optional(v.array(v.string())),
+    /** barbell, dumbbell, cable, machine, bodyweight, kettlebell, cardio */
+    equipment: v.string(),
+    /** peso_livre, maquinario, funcional, cardio, hiit */
+    type: v.string(),
+    difficulty: v.union(
+      v.literal("facil"),
+      v.literal("medio"),
+      v.literal("dificil"),
+    ),
+    /** True quando exercício causa impacto/carga forte em joelho (corrida, salto, etc.) */
+    hasImpact: v.boolean(),
+    /** True = composto multi-articular. False = isolamento. */
+    isCompound: v.boolean(),
+    defaultSets: v.number(),
+    defaultRepsLow: v.number(),
+    defaultRepsHigh: v.number(),
+    /** segundos */
+    defaultRest: v.number(),
+    /** True se usa barra olímpica (cálculo de anilhas) */
+    useBar: v.optional(v.boolean()),
+    /** ex.: "Sentar reto, descer lento" — dica curta */
+    cue: v.optional(v.string()),
+  })
+    .index("by_profile", ["profileId"])
+    .index("by_muscle", ["primaryMuscle"])
+    .searchIndex("search_name", {
+      searchField: "searchKey",
+      filterFields: ["profileId"],
+    }),
+
+  /* =================================================================
+     Suplementação — per profile
+     ----------------------------------------------------------------
+     Gerado pelo planGenerator a partir do objetivo do usuário.
+     active=false faz soft-delete (preserva histórico).
+     ================================================================= */
+  supplementPlan: defineTable({
+    profileId: v.id("profiles"),
+    /** ID estável (ex.: "creatina", "whey") pra dedup */
+    suppId: v.string(),
+    name: v.string(),
+    dose: v.string(),
+    /** ex.: "manhã com café", "pré-treino", "noite antes de dormir" */
+    timing: v.string(),
+    /** Razão curta pro user entender o porquê */
+    why: v.optional(v.string()),
+    /** facil/medio/dificil de conseguir (custo + disponibilidade) */
+    priority: v.optional(
+      v.union(
+        v.literal("essencial"),
+        v.literal("recomendado"),
+        v.literal("opcional"),
+      ),
+    ),
+    order: v.number(),
+    active: v.boolean(),
+  })
+    .index("by_profile", ["profileId"])
+    .index("by_profile_supp", ["profileId", "suppId"]),
 });

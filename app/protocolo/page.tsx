@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { SupplementsPanel } from "@/components/protocolo/SupplementsPanel";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { PROTOCOL_SECTIONS } from "@/lib/protocol-content";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,8 @@ export default function ProtocoloPage() {
   return (
     <>
       <ScreenHeader title="Protocolo" subtitle="Dieta · Suplementos · Compras" />
+
+      <SupplementsPanel />
 
       <div className="space-y-2">
         {PROTOCOL_SECTIONS.map((s) => {
