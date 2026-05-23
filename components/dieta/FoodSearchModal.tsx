@@ -7,14 +7,14 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useDeviceId } from "@/lib/deviceId";
-import { macrosForPortion, mealSlot, type MealType } from "@/lib/diet";
+import { macrosForPortion, type MealSlot } from "@/lib/diet";
 import { cn } from "@/lib/utils";
 
 type FoodSearchModalProps = {
   open: boolean;
   onClose: () => void;
   date: string;
-  mealType: MealType;
+  slot: MealSlot;
 };
 
 type FoodRow = {
@@ -34,7 +34,7 @@ type FoodRow = {
    FoodSearchModal — busca + seleção + porção + add OR custom food
    ================================================================= */
 
-export function FoodSearchModal({ open, onClose, date, mealType }: FoodSearchModalProps) {
+export function FoodSearchModal({ open, onClose, date, slot }: FoodSearchModalProps) {
   const deviceId = useDeviceId();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<FoodRow | null>(null);
@@ -49,8 +49,6 @@ export function FoodSearchModal({ open, onClose, date, mealType }: FoodSearchMod
   const addEntry = useMutation(api.meals.addEntry);
   const addCustom = useMutation(api.foods.addCustom);
   const deleteCustom = useMutation(api.foods.deleteCustom);
-
-  const slot = mealSlot(mealType);
 
   const handlePick = (f: FoodRow) => {
     setSelected(f);
@@ -70,7 +68,7 @@ export function FoodSearchModal({ open, onClose, date, mealType }: FoodSearchMod
     await addEntry({
       deviceId,
       date,
-      mealType,
+      mealType: slot.id,
       foodId: selected._id as never,
       foodName: selected.name + (selected.brand ? ` · ${selected.brand}` : ""),
       portionGrams: grams,

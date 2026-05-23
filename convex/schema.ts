@@ -130,7 +130,7 @@ export default defineSchema({
     profileId: v.id("profiles"),
     /** YYYY-MM-DD */
     date: v.string(),
-    /** cafe | lanche_manha | almoco | pre_treino | jantar | pre_sono */
+    /** cafe | lanche_manha | almoco | pre_treino | jantar | pre_sono | custom */
     mealType: v.string(),
     /** Link opcional pro food (null em quick-entry sem buscar) */
     foodId: v.optional(v.id("foods")),
@@ -145,4 +145,112 @@ export default defineSchema({
   })
     .index("by_profile_date", ["profileId", "date"])
     .index("by_profile", ["profileId"]),
+
+  /* =================================================================
+     Plano personalizado — Slice 1 multi-user
+     ----------------------------------------------------------------
+     Cada profile tem o seu protocolo: respostas do onboarding,
+     templates de treino, plano de refeições e lista de hábitos.
+     Quando um profile é criado, é seedado com os defaults do 5M
+     (ver convex/lib/defaultPlan.ts). Daí pra frente é independente.
+     ================================================================= */
+
+  profileSettings: defineTable({
+    profileId: v.id("profiles"),
+    /** Identificação (mostrada em settings/topo) */
+    displayName: v.optional(v.string()),
+    /** Onboarding answers */
+    age: v.optional(v.number()),
+    sex: v.optional(v.union(v.literal("M"), v.literal("F"))),
+    heightCm: v.optional(v.number()),
+    targetWeight: v.optional(v.number()),
+    goal: v.optional(
+      v.union(
+        v.literal("cut"),
+        v.literal("maintain"),
+        v.literal("recomp"),
+        v.literal("bulk"),
+      ),
+    ),
+    biotipo: v.optional(
+      v.union(
+        v.literal("ectomorfo"),
+        v.literal("mesomorfo"),
+        v.literal("endomorfo"),
+      ),
+    ),
+    activityLevel: v.optional(
+      v.union(
+        v.literal("sedentary"),
+        v.literal("light"),
+        v.literal("moderate"),
+        v.literal("active"),
+        v.literal("very_active"),
+      ),
+    ),
+    trainingDaysPerWeek: v.optional(v.number()),
+    sessionDurationMin: v.optional(v.number()),
+    /** ["funcional", "maquinario", "peso_livre", "cardio", "hiit"] */
+    exerciseTypes: v.optional(v.array(v.string())),
+    hasKneeIssues: v.optional(v.boolean()),
+    /** Restrições alimentares ("sem_lactose", "vegetariano", ...) + alergias livres */
+    dietaryRestrictions: v.optional(v.array(v.string())),
+    notes: v.optional(v.string()),
+    /** Timestamp do onboarding completo. Quando null, /onboarding redireciona. */
+    onboardedAt: v.optional(v.number()),
+  }).index("by_profile", ["profileId"]),
+
+  workoutTemplates: defineTable({
+    profileId: v.id("profiles"),
+    /** "upperA", "lowerA", etc. — pode ser custom */
+    templateId: v.string(),
+    name: v.string(),
+    /** "Dia 1 · ~40 min" — label livre */
+    day: v.string(),
+    focus: v.string(),
+    order: v.number(),
+    exercises: v.array(
+      v.object({
+        name: v.string(),
+        sets: v.number(),
+        reps: v.string(),
+        rest: v.number(),
+        useBar: v.optional(v.boolean()),
+      }),
+    ),
+  })
+    .index("by_profile", ["profileId"])
+    .index("by_profile_template", ["profileId", "templateId"])
+    .index("by_profile_order", ["profileId", "order"]),
+
+  mealPlan: defineTable({
+    profileId: v.id("profiles"),
+    goals: v.object({
+      kcal: v.number(),
+      protein: v.number(),
+      carbs: v.number(),
+      fat: v.number(),
+    }),
+    slots: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        time: v.string(),
+        hint: v.optional(v.string()),
+      }),
+    ),
+  }).index("by_profile", ["profileId"]),
+
+  habitItems: defineTable({
+    profileId: v.id("profiles"),
+    /** ID do hábito (ex.: "agua", "proteina", ou custom) */
+    itemId: v.string(),
+    text: v.string(),
+    sub: v.optional(v.string()),
+    order: v.number(),
+    /** True = aparece no checklist. False = soft-deleted. */
+    active: v.boolean(),
+  })
+    .index("by_profile", ["profileId"])
+    .index("by_profile_item", ["profileId", "itemId"]),
 });

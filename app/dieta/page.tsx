@@ -11,14 +11,16 @@ import { Panel } from "@/components/ui/Panel";
 import { RingProgress } from "@/components/ui/RingProgress";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { addDays, dayOfWeek, formatDateBR, todayStr } from "@/lib/dates";
-import { DIET_GOALS, MEAL_SLOTS, type MealType } from "@/lib/diet";
 import { useDeviceId } from "@/lib/deviceId";
+import type { MealSlot as MealSlotData } from "@/lib/diet";
 import type { MealEntry } from "@/lib/types";
+import { useMealPlanData } from "@/lib/usePlan";
 
 export default function DietaPage() {
   const deviceId = useDeviceId();
   const [date, setDate] = useState<string>(() => todayStr());
-  const [modalMeal, setModalMeal] = useState<MealType | null>(null);
+  const [modalSlot, setModalSlot] = useState<MealSlotData | null>(null);
+  const { goals, slots } = useMealPlanData();
 
   const entries = useQuery(
     api.meals.getDay,
@@ -40,23 +42,16 @@ export default function DietaPage() {
   }, [foodCount, seedDefaults]);
 
   const byMeal = useMemo(() => {
-    const out: Record<MealType, MealEntry[]> = {
-      cafe: [],
-      lanche_manha: [],
-      almoco: [],
-      pre_treino: [],
-      jantar: [],
-      pre_sono: [],
-    };
+    const out: Record<string, MealEntry[]> = {};
+    for (const s of slots) out[s.id] = [];
     for (const e of entries ?? []) {
-      const m = e.mealType as MealType;
-      if (out[m]) out[m].push(e);
+      (out[e.mealType] ??= []).push(e);
     }
     return out;
-  }, [entries]);
+  }, [entries, slots]);
 
   const isToday = date === todayStr();
-  const kcalPct = totals ? Math.round((totals.kcal / DIET_GOALS.kcal) * 100) : 0;
+  const kcalPct = totals ? Math.round((totals.kcal / goals.kcal) * 100) : 0;
 
   return (
     <>
@@ -101,39 +96,42 @@ export default function DietaPage() {
               {totals ? Math.round(totals.kcal) : 0}
             </span>
             <span className="text-text-mute font-sans text-[10px] tracking-[0.12em] uppercase">
-              / {DIET_GOALS.kcal} kcal
+              / {goals.kcal} kcal
             </span>
           </RingProgress>
           <div className="min-w-0 flex-1 space-y-3">
             <MacroBar
               label="Proteína"
               current={totals?.protein ?? 0}
-              goal={DIET_GOALS.protein}
+              goal={goals.protein}
             />
             <MacroBar
               label="Carboidrato"
               current={totals?.carbs ?? 0}
-              goal={DIET_GOALS.carbs}
+              goal={goals.carbs}
               accent="var(--info)"
             />
             <MacroBar
               label="Gordura"
               current={totals?.fat ?? 0}
-              goal={DIET_GOALS.fat}
+              goal={goals.fat}
               accent="var(--warning)"
             />
           </div>
+        </div>
+        <div className="text-text-mute mt-3 font-sans text-[10px] tracking-[0.12em] uppercase">
+          Meta: {goals.kcal} kcal · {goals.protein}g P · {goals.carbs}g C · {goals.fat}g G
         </div>
       </Panel>
 
       {/* Meal slots */}
       <div className="space-y-3">
-        {MEAL_SLOTS.map((slot) => (
+        {slots.map((slot) => (
           <MealSlot
             key={slot.id}
-            mealType={slot.id}
+            slot={slot}
             entries={byMeal[slot.id] ?? []}
-            onAdd={() => setModalMeal(slot.id)}
+            onAdd={() => setModalSlot(slot)}
             onDelete={(entryId) => {
               if (!deviceId) return;
               void deleteEntry({ deviceId, entryId: entryId as never });
@@ -142,12 +140,12 @@ export default function DietaPage() {
         ))}
       </div>
 
-      {modalMeal && (
+      {modalSlot && (
         <FoodSearchModal
-          open={modalMeal !== null}
-          onClose={() => setModalMeal(null)}
+          open={modalSlot !== null}
+          onClose={() => setModalSlot(null)}
           date={date}
-          mealType={modalMeal}
+          slot={modalSlot}
         />
       )}
     </>

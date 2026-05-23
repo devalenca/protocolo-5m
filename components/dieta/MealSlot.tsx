@@ -1,12 +1,12 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { mealSlot, type MealType } from "@/lib/diet";
+import type { MealSlot as MealSlotData } from "@/lib/diet";
 import type { MealEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type MealSlotProps = {
-  mealType: MealType;
+  slot: MealSlotData;
   entries: MealEntry[];
   onAdd: () => void;
   onDelete: (entryId: string) => void;
@@ -16,8 +16,7 @@ type MealSlotProps = {
    MealSlot — card de uma refeição (header + entries + add)
    ================================================================= */
 
-export function MealSlot({ mealType, entries, onAdd, onDelete }: MealSlotProps) {
-  const slot = mealSlot(mealType);
+export function MealSlot({ slot, entries, onAdd, onDelete }: MealSlotProps) {
   const totals = entries.reduce(
     (acc, e) => ({ kcal: acc.kcal + e.kcal, protein: acc.protein + e.protein }),
     { kcal: 0, protein: 0 },
@@ -31,7 +30,8 @@ export function MealSlot({ mealType, entries, onAdd, onDelete }: MealSlotProps) 
             {slot.label}
           </h3>
           <div className="text-text-mute mt-0.5 font-sans text-[10px] tracking-[0.18em] uppercase">
-            {slot.time} · {slot.hint}
+            {slot.time}
+            {slot.hint && ` · ${slot.hint}`}
           </div>
         </div>
         {entries.length > 0 && (
