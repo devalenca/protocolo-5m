@@ -6,6 +6,7 @@ import { loadData, resetData, saveData } from "./storage";
 import type {
   AchievementId,
   AppData,
+  BodyMetric,
   ChecklistItemId,
   LoggedExercise,
   LoggedWorkout,
@@ -82,6 +83,30 @@ export function useStore() {
     [mutate],
   );
 
+  /** Upsert (cria ou substitui) métrica corporal por data */
+  const upsertBodyMetric = useCallback(
+    (metric: BodyMetric) => {
+      mutate((d) => {
+        const others = d.bodyMetrics.filter((m) => m.date !== metric.date);
+        const next = [...others, metric].sort((a, b) =>
+          a.date.localeCompare(b.date),
+        );
+        return { ...d, bodyMetrics: next };
+      });
+    },
+    [mutate],
+  );
+
+  const deleteBodyMetric = useCallback(
+    (date: string) => {
+      mutate((d) => ({
+        ...d,
+        bodyMetrics: d.bodyMetrics.filter((m) => m.date !== date),
+      }));
+    },
+    [mutate],
+  );
+
   const reset = useCallback(() => {
     const fresh = resetData();
     setData(fresh);
@@ -93,6 +118,8 @@ export function useStore() {
     mutate,
     toggleChecklistItem,
     finishWorkout,
+    upsertBodyMetric,
+    deleteBodyMetric,
     reset,
   };
 }

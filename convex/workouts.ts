@@ -36,6 +36,8 @@ function bestSetByWeight(sets: { weight: string; reps: string }[]) {
 const setValidator = v.object({
   weight: v.string(),
   reps: v.string(),
+  rpe: v.optional(v.string()),
+  notes: v.optional(v.string()),
 });
 
 const exerciseValidator = v.object({
@@ -149,6 +151,65 @@ export const getAllPRs = query({
     return Array.from(prs.entries())
       .map(([exerciseName, e]) => ({ exerciseName, ...e }))
       .sort((a, b) => b.weight * b.reps - a.weight * a.reps);
+  },
+});
+
+export const getExerciseHistory = query({
+  args: {
+    deviceId: v.optional(v.string()),
+    exerciseName: v.string(),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(
+    v.object({
+      workoutId: v.string(),
+      date: v.string(),
+      finishedAt: v.number(),
+      sets: v.array(
+        v.object({
+          weight: v.string(),
+          reps: v.string(),
+          rpe: v.optional(v.string()),
+          notes: v.optional(v.string()),
+        }),
+      ),
+      /** e1RM máximo da sessão (Epley) */
+      bestE1RM: v.number(),
+      /** Tonnage da sessão (sum weight×reps das séries com carga) */
+      tonnage: v.number(),
+    }),
+  ),
+  handler: async (ctx, { deviceId, exerciseName, limit }) => {
+    const profile = await findProfileForRequest(ctx, deviceId);
+    if (!profile) return [];
+    const all = await listWorkoutsFor(ctx, profile._id);
+    const sessions = all
+      .map((w) => {
+        const ex = w.exercises.find((e) => e.name === exerciseName);
+        if (!ex) return null;
+        const validSets = ex.sets.filter((s) => s.weight && s.reps);
+        if (validSets.length === 0) return null;
+        let bestE1RM = 0;
+        let tonnage = 0;
+        for (const s of validSets) {
+          const we = Number(s.weight);
+          const rp = Number(s.reps);
+          tonnage += we * rp;
+          const e1 = rp === 1 ? we : we * (1 + rp / 30);
+          if (e1 > bestE1RM) bestE1RM = e1;
+        }
+        return {
+          workoutId: w.workoutId,
+          date: w.date,
+          finishedAt: w.finishedAt,
+          sets: ex.sets,
+          bestE1RM: Math.round(bestE1RM * 10) / 10,
+          tonnage: Math.round(tonnage),
+        };
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+    sessions.sort((a, b) => b.finishedAt - a.finishedAt);
+    return sessions.slice(0, limit ?? 25);
   },
 });
 

@@ -7,6 +7,7 @@ import { useDeviceId } from "./deviceId";
 import { todayStr } from "./dates";
 import type {
   AppData,
+  BodyMetric,
   ChecklistItemId,
   ChecklistState,
   LoggedExercise,
@@ -27,6 +28,7 @@ function emptyAppData(): AppData {
     checklist: {},
     workouts: [],
     achievements: [],
+    bodyMetrics: [],
     startDate: todayStr(),
     v: SCHEMA_VERSION,
   };
@@ -40,11 +42,14 @@ export function useConvexStore() {
   const entries = useQuery(api.checklist.listAllEntries, skipArg);
   const workouts = useQuery(api.workouts.listRecent, deviceId ? { deviceId, limit: 1000 } : "skip");
   const achievements = useQuery(api.achievements.list, skipArg);
+  const bodyMetrics = useQuery(api.bodyMetrics.listAll, skipArg);
 
   const ensureProfileMutation = useMutation(api.profiles.ensureProfile);
   const toggleMutation = useMutation(api.checklist.toggleItem);
   const finishMutation = useMutation(api.workouts.finishWorkout);
   const checkAndUnlockMutation = useMutation(api.achievements.checkAndUnlock);
+  const upsertBodyMetricMutation = useMutation(api.bodyMetrics.upsertEntry);
+  const deleteBodyMetricMutation = useMutation(api.bodyMetrics.deleteEntry);
 
   // Garante profile ao carregar
   useEffect(() => {
@@ -58,7 +63,8 @@ export function useConvexStore() {
     Boolean(deviceId) &&
     entries !== undefined &&
     workouts !== undefined &&
-    achievements !== undefined;
+    achievements !== undefined &&
+    bodyMetrics !== undefined;
 
   // Monta AppData no shape esperado pelas páginas
   const data: AppData = useMemo(() => {
@@ -80,14 +86,27 @@ export function useConvexStore() {
     // Order mais antigo → mais novo, espelha o que useStore retornava
     mappedWorkouts.sort((a, b) => a.finishedAt - b.finishedAt);
 
+    const mappedMetrics: BodyMetric[] = (bodyMetrics ?? []).map((m) => ({
+      date: m.date,
+      weight: m.weight,
+      bodyFatPct: m.bodyFatPct,
+      waist: m.waist,
+      chest: m.chest,
+      arm: m.arm,
+      hip: m.hip,
+      thigh: m.thigh,
+      notes: m.notes,
+    }));
+
     return {
       checklist,
       workouts: mappedWorkouts,
       achievements: (achievements ?? []).map((a) => a.achievementId as never),
+      bodyMetrics: mappedMetrics,
       startDate: profile?.startDate ?? todayStr(),
       v: SCHEMA_VERSION,
     };
-  }, [hydrated, entries, workouts, achievements, profile]);
+  }, [hydrated, entries, workouts, achievements, bodyMetrics, profile]);
 
   const toggleChecklistItem = useCallback(
     (date: string, itemId: ChecklistItemId) => {
@@ -107,6 +126,22 @@ export function useConvexStore() {
       });
     },
     [deviceId, finishMutation, checkAndUnlockMutation],
+  );
+
+  const upsertBodyMetric = useCallback(
+    (metric: BodyMetric) => {
+      if (!deviceId) return;
+      void upsertBodyMetricMutation({ deviceId, ...metric });
+    },
+    [deviceId, upsertBodyMetricMutation],
+  );
+
+  const deleteBodyMetric = useCallback(
+    (date: string) => {
+      if (!deviceId) return;
+      void deleteBodyMetricMutation({ deviceId, date });
+    },
+    [deviceId, deleteBodyMetricMutation],
   );
 
   const mutate = useCallback((..._args: unknown[]) => {
@@ -135,6 +170,8 @@ export function useConvexStore() {
     mutate,
     toggleChecklistItem,
     finishWorkout,
+    upsertBodyMetric,
+    deleteBodyMetric,
     reset,
     deviceId,
   };

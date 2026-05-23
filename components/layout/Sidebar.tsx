@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, CheckCircle2, Dumbbell, Home } from "lucide-react";
+import { Apple, BookOpen, CheckCircle2, Dumbbell, Home, LineChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, type NavItem } from "./nav-items";
 import { SettingsButton } from "./SettingsButton";
@@ -13,6 +13,8 @@ const ICONS = {
   CheckCircle2,
   Dumbbell,
   BookOpen,
+  LineChart,
+  Apple,
 } as const;
 
 function Icon({ name }: { name: NavItem["lucide"] }) {

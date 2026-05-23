@@ -9,6 +9,7 @@ export function emptyData(): AppData {
     checklist: {},
     workouts: [],
     achievements: [],
+    bodyMetrics: [],
     startDate: todayStr(),
     v: SCHEMA_VERSION,
   };
@@ -32,6 +33,7 @@ function normalize(d: Partial<AppData>): AppData {
     checklist: d.checklist ?? {},
     workouts: d.workouts ?? [],
     achievements: d.achievements ?? [],
+    bodyMetrics: d.bodyMetrics ?? [],
     startDate: d.startDate ?? todayStr(),
     v: SCHEMA_VERSION,
   };
