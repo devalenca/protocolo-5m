@@ -9,23 +9,30 @@
  */
 
 import type * as achievements from "../achievements.js";
+import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as bodyMetrics from "../bodyMetrics.js";
 import type * as checklist from "../checklist.js";
 import type * as claims from "../claims.js";
+import type * as exercises from "../exercises.js";
 import type * as foods from "../foods.js";
 import type * as habitItems from "../habitItems.js";
 import type * as http from "../http.js";
 import type * as lib_constants from "../lib/constants.js";
 import type * as lib_dates from "../lib/dates.js";
 import type * as lib_defaultPlan from "../lib/defaultPlan.js";
+import type * as lib_exerciseLibrary from "../lib/exerciseLibrary.js";
 import type * as lib_foodSeed from "../lib/foodSeed.js";
 import type * as lib_identity from "../lib/identity.js";
+import type * as lib_planGenerator from "../lib/planGenerator.js";
+import type * as lib_supplementTemplates from "../lib/supplementTemplates.js";
 import type * as mealPlan from "../mealPlan.js";
 import type * as meals from "../meals.js";
 import type * as migrations from "../migrations.js";
+import type * as planApply from "../planApply.js";
 import type * as profileSettings from "../profileSettings.js";
 import type * as profiles from "../profiles.js";
+import type * as supplementPlan from "../supplementPlan.js";
 import type * as workoutTemplates from "../workoutTemplates.js";
 import type * as workouts from "../workouts.js";
 
@@ -37,23 +44,30 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   achievements: typeof achievements;
+  admin: typeof admin;
   auth: typeof auth;
   bodyMetrics: typeof bodyMetrics;
   checklist: typeof checklist;
   claims: typeof claims;
+  exercises: typeof exercises;
   foods: typeof foods;
   habitItems: typeof habitItems;
   http: typeof http;
   "lib/constants": typeof lib_constants;
   "lib/dates": typeof lib_dates;
   "lib/defaultPlan": typeof lib_defaultPlan;
+  "lib/exerciseLibrary": typeof lib_exerciseLibrary;
   "lib/foodSeed": typeof lib_foodSeed;
   "lib/identity": typeof lib_identity;
+  "lib/planGenerator": typeof lib_planGenerator;
+  "lib/supplementTemplates": typeof lib_supplementTemplates;
   mealPlan: typeof mealPlan;
   meals: typeof meals;
   migrations: typeof migrations;
+  planApply: typeof planApply;
   profileSettings: typeof profileSettings;
   profiles: typeof profiles;
+  supplementPlan: typeof supplementPlan;
   workoutTemplates: typeof workoutTemplates;
   workouts: typeof workouts;
 }>;
