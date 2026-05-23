@@ -7,6 +7,7 @@ import { TabBar } from "@/components/layout/TabBar";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { TopBar } from "@/components/layout/TopBar";
 import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
+import { OnboardingGate } from "@/components/providers/OnboardingGate";
 import { ToastProvider } from "@/components/ui/Toast";
 import { buildThemeScript } from "@/lib/theme";
 import "./globals.css";
@@ -66,6 +67,7 @@ export default function RootLayout({
           <ConvexClientProvider>
             <ThemeProvider>
               <ToastProvider>
+                <OnboardingGate>
                 <Sidebar />
                 <TopBar />
                 <main
@@ -82,6 +84,7 @@ export default function RootLayout({
                   </div>
                 </main>
                 <TabBar />
+                </OnboardingGate>
               </ToastProvider>
             </ThemeProvider>
           </ConvexClientProvider>
