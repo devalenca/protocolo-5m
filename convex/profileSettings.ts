@@ -50,6 +50,7 @@ const settingsDoc = v.object({
   dietaryRestrictions: v.optional(v.array(v.string())),
   notes: v.optional(v.string()),
   onboardedAt: v.optional(v.number()),
+  isAdmin: v.optional(v.boolean()),
 });
 
 export const get = query({

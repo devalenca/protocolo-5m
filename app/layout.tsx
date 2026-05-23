@@ -2,8 +2,9 @@ import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import type { Metadata, Viewport } from "next";
 import { EB_Garamond, Inter } from "next/font/google";
 import Script from "next/script";
+import { CommandPalette } from "@/components/layout/CommandPalette";
+import { MobileDock } from "@/components/layout/MobileDock";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { TabBar } from "@/components/layout/TabBar";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { TopBar } from "@/components/layout/TopBar";
 import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
@@ -75,7 +76,7 @@ export default function RootLayout({
                   style={
                     {
                       "--mobile-top": "calc(56px + var(--safe-top))",
-                      "--mobile-bottom": "calc(72px + var(--safe-bottom) + 16px)",
+                      "--mobile-bottom": "calc(80px + var(--safe-bottom) + 16px)",
                     } as React.CSSProperties
                   }
                 >
@@ -83,7 +84,8 @@ export default function RootLayout({
                     <div className="mx-auto w-full max-w-md lg:max-w-2xl">{children}</div>
                   </div>
                 </main>
-                <TabBar />
+                <MobileDock />
+                <CommandPalette />
                 </OnboardingGate>
               </ToastProvider>
             </ThemeProvider>

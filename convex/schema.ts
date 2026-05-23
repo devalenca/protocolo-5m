@@ -202,6 +202,8 @@ export default defineSchema({
     notes: v.optional(v.string()),
     /** Timestamp do onboarding completo. Quando null, /onboarding redireciona. */
     onboardedAt: v.optional(v.number()),
+    /** True = pode acessar /admin/users e ver todos os profiles. */
+    isAdmin: v.optional(v.boolean()),
   }).index("by_profile", ["profileId"]),
 
   workoutTemplates: defineTable({
